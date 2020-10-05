@@ -1,37 +1,52 @@
 @startuml
-
 box "PIONEER" #LightBlue
-actor Becca
-database PIONEER
-collections keystore
-database BECCADB
+actor Rebecca
+database EPIC
+database PIONEERPBCP
+collections "List of co-recruited patients"
 end box
 
 box "Stats" #Orange
-actor Alice
-database SECRETS
+actor Jerome
+database "PIONEER Central Database" as pcdb
+database "End of Treatment Ki67"
+collections "Encrypted Ki67"
+collections "PIONEER Pseudo-IDs"
 end box
 
+box "PBCP" #LightGreen
+actor Karen
+database PBCP
+end box
+
+== PIONEER database collation and PIONEER Trial ID masking ==
+
+Rebecca -> Rebecca: Balance patient numbers \n across treatment arms
+EPIC -> Rebecca: Extract parameters not in trial database
+Rebecca -> "List of co-recruited patients": Combine EPIC parameters with trial IDs
+pcdb -> Jerome: Extract required parameters
+Rebecca -> Jerome: Send PIONEER Trial IDs with parameters \n from EPIC
+Karen -> Karen: Cross-reference PIONEER/PBCP Trial IDs
+Karen -> Jerome: List of corresponding PBCP/PIONEER Trial IDs
+
+'Jerome -> Jerome: Collate PBCP/PIONEER trial IDs and all clinicopathological data'
+
 == Encrypt PIONEER data ==
+Jerome -> "PIONEER Pseudo-IDs" : Ascribe pseudonyms for PIONEER Trial IDs
+Jerome -> "Encrypted Ki67": Encrypt End of Treatment Ki67
 
-PIONEER -> Becca: PIONEER data
-Becca -> keystore: Generate and store key
-Becca -> Becca: Encrypt PIONEER data
-Becca <- BECCADB: encrypted PIONEER data
+== Data sharing ==
+Jerome -> Karen: Share list of PIONEER Pseudo-IDs with corresponding PBCP ID
+"Encrypted Ki67" -> Rebecca: Rebecca given access to encrypted \n end of treatment Ki67 data \n with PIONEER pseudo-IDs only
+Jerome -> Rebecca: Share encryption key for for \n end of treatment Ki67
+Jerome -> Rebecca: Share collated clinicopathological data with \n encrypted PIONEER trial ID only (**No PIONEER/PBCP original trial ID**)
 
-== Send encrypted PIONEER data ==
-Becca -> Alice: encrypted PIONEER data
+== PBCP data re-labelling ==
+PBCP -> Karen: Required data
+Karen -> Karen: Re-label PBCP data-frames with encrypted PIONEER Trial IDs
 
-== Retrieve secret data ==
-SECRETS -> Alice: Secret data
-
-== Combine and return data ==
-Alice -> Alice: Combine data
-Alice -> Becca: Combined data
-
-== Store and Decrypt data ==
-keystore -> Becca: Retrieve key
-Becca -> Becca: Decrypt
-Becca -> BECCADB: Store combined data
-
+== Integration of data ==
+Rebecca -> Rebecca: Decrypt Ki67 data
+Rebecca -> PIONEERPBCP: combine Ki67 with other \n clinicopathological data (encrypted PIONEER IDs)
+Karen -> Rebecca: Share PBCP data with original PBCP IDs \n substituted PIONEER pseudonyms
 @enduml
