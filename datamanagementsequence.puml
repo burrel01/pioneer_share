@@ -1,17 +1,21 @@
 @startuml
+
+hide footbox
+title Foot Box removed
+
 box "PIONEER" #LightBlue
 actor Rebecca
-database EPIC
-database PIONEERPBCP
-collections "List of co-recruited patients"
+database CUH 
+collections "Co-recruited \n PIONEER IDs"
+collections "Collated \n PIONEER PBCP \n database"
 end box
 
-box "Stats" #Orange
+box "Stats" #Lemon
 actor Jerome
 database "PIONEER Central Database" as pcdb
-database "End of Treatment Ki67"
-collections "Encrypted Ki67"
+collections "PIONEER subset"
 collections "PIONEER Pseudo-IDs"
+collections "Pseudonymised \n PIONEER subset"
 end box
 
 box "PBCP" #LightGreen
@@ -19,34 +23,41 @@ actor Karen
 database PBCP
 end box
 
-== PIONEER database collation and PIONEER Trial ID masking ==
 
-Rebecca -> Rebecca: Balance patient numbers \n across treatment arms
-EPIC -> Rebecca: Extract parameters not in trial database
-Rebecca -> "List of co-recruited patients": Combine EPIC parameters with trial IDs
-pcdb -> Jerome: Extract required parameters
-Rebecca -> Jerome: Send PIONEER Trial IDs with parameters \n from EPIC
+== Defining study patient subset ==
+
+create "Co-recruited \n PIONEER IDs"
+Rebecca -> "Co-recruited \n PIONEER IDs": Balance numbers across trial arms
+
+pcdb -> Jerome: Parameters for analysis extracted
+
 Karen -> Karen: Cross-reference PIONEER/PBCP Trial IDs
-Karen -> Jerome: List of corresponding PBCP/PIONEER Trial IDs
+Karen -> Jerome: List of paired PBCP/PIONEER Trial IDs
 
-'Jerome -> Jerome: Collate PBCP/PIONEER trial IDs and all clinicopathological data'
+create "PIONEER subset"
+Jerome -> "PIONEER subset": Collate clinicopathological data with \n true Trial IDs (PIONEER & PBCP)
 
-== Encrypt PIONEER data ==
-Jerome -> "PIONEER Pseudo-IDs" : Ascribe pseudonyms for PIONEER Trial IDs
-Jerome -> "Encrypted Ki67": Encrypt End of Treatment Ki67
+== Assign PIONEER pseudonyms ==
+create "PIONEER Pseudo-IDs"
+Jerome -> "PIONEER Pseudo-IDs" : Ascribe pseudonyms for \n PIONEER Trial IDs
+Jerome -> "PIONEER Pseudo-IDs": Ascribe pseudonyms for \n PIONEER Treatment Arms
+Jerome -> Karen: Share list of PIONEER Pseudo-IDs \n with corresponding PBCP ID
 
-== Data sharing ==
-Jerome -> Karen: Share list of PIONEER Pseudo-IDs with corresponding PBCP ID
-"Encrypted Ki67" -> Rebecca: Rebecca given access to encrypted \n end of treatment Ki67 data \n with PIONEER pseudo-IDs only
-Jerome -> Rebecca: Share encryption key for for \n end of treatment Ki67
-Jerome -> Rebecca: Share collated clinicopathological data with \n encrypted PIONEER trial ID only (**No PIONEER/PBCP original trial ID**)
+== Pseudonymised database generation ==
+create "Pseudonymised \n PIONEER subset"
+Jerome -> "Pseudonymised \n PIONEER subset": Jerome removes true Trial IDs (PIONEER & PBCP)
+pcdb -> "Pseudonymised \n PIONEER subset":
+note left: Ki67 end of treatment data added
+"Pseudonymised \n PIONEER subset" -> Rebecca: Jerome shares pseudonymised database
 
 == PBCP data re-labelling ==
-PBCP -> Karen: Required data
-Karen -> Karen: Re-label PBCP data-frames with encrypted PIONEER Trial IDs
+PBCP -> Karen: Required PBCP data \n RNA seq \n Mutation calls \n SVs etc 
+Karen -> Karen: Re-label PBCP data objects \n with PIONEER Pseudo-IDs
 
 == Integration of data ==
-Rebecca -> Rebecca: Decrypt Ki67 data
-Rebecca -> PIONEERPBCP: combine Ki67 with other \n clinicopathological data (encrypted PIONEER IDs)
-Karen -> Rebecca: Share PBCP data with original PBCP IDs \n substituted PIONEER pseudonyms
+
+Karen -> Rebecca: Share PBCP data with  PBCP IDs \n substituted for PIONEER pseudonyms
+create "Collated \n PIONEER PBCP \n database"
+Rebecca -> "Collated \n PIONEER PBCP \n database": Integrate Pseudonymised \n PIONEER subset \n and PBCP data to form \n dataset for analysis
+
 @enduml
